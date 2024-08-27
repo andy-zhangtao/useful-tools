@@ -1,12 +1,10 @@
 /* 添加样式以区分左右区域的背景色 */
 .left-panel {
   background-color: #f0f0f0; /* 左侧区域背景色 */
-  width: 50%; /* 设置宽度为50% */
 }
 
 .right-panel {
   background-color: #ffffff; /* 右侧区域背景色 */
-  width: 50%; /* 设置宽度为50% */
 }
 
 textarea {
@@ -22,7 +20,7 @@ svg {
 }
 
 html, body, #root {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-  }
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import D3Visualization from "./components/D3Visualization";
 import JsonInput from "./components/JsonInput";
+import D3Visualization from "./components/D3Visualization";
+import "bootstrap/dist/css/bootstrap.min.css";
 import "./styles.css";
 
 function App() {
@@ -12,12 +13,18 @@ function App() {
   };
 
   return (
-    <div className="App flex h-screen">
-      <div className="left-panel w-1/2 bg-gray-200 border-r-2 border-gray-400 h-full overflow-auto">
-        <JsonInput onJsonChange={handleJsonChange} />
-      </div>
-      <div className="right-panel w-1/2 bg-gray-100 h-full overflow-auto">
-        <D3Visualization jsonData={jsonData} />
+    <div className="App container-fluid h-100">
+      <div class="row">
+    <div class="col-md-6">左侧内容</div>
+    <div class="col-md-6">右侧内容</div>
+  </div>
+      <div className="row h-100">
+        <div className="col-3 bg-light border-right overflow-auto">
+          <JsonInput onJsonChange={handleJsonChange} />
+        </div>
+        <div className="col-6 bg-white overflow-auto">
+          <D3Visualization jsonData={jsonData} />
+        </div>
       </div>
     </div>
   );

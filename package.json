@@ -12,6 +12,7 @@
   "description": "",
   "dependencies": {
     "autoprefixer": "^10.4.20",
+    "bootstrap": "^5.3.3",
     "cytoscape": "^3.30.2",
     "d3": "^7.9.0",
     "postcss": "^8.4.41",
