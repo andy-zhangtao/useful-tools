@@ -1,0 +1,5 @@
+/* 确保 CytoscapeComponent 占满整个右侧区域 */
+.cyto-container {
+  width: 100%;
+  height: 100%;
+}
