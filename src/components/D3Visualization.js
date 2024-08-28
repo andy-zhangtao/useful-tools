@@ -1,9 +1,10 @@
 import * as d3 from "d3";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./Visualization.css";
 
 const D3Visualization = ({ jsonData }) => {
   const svgRef = useRef();
+  const [expandedNodes, setExpandedNodes] = useState(new Set());
 
   useEffect(() => {
     const svg = d3.select(svgRef.current);
@@ -21,6 +22,17 @@ const D3Visualization = ({ jsonData }) => {
 
     const root = d3.hierarchy(hierarchyData);
     const treeLayout = d3.tree().size([height, width - 200]);
+
+    // 折叠第3层以上的节点
+    root.descendants().forEach((d) => {
+      if (d.depth >= 2 && !expandedNodes.has(d.data.name)) {
+        if (d.children) {
+          d._children = d.children;
+          d.children = null;
+        }
+      }
+    });
+
     treeLayout(root);
 
     // 将根节点移动到 SVG 左侧
@@ -35,62 +47,108 @@ const D3Visualization = ({ jsonData }) => {
 
     const g = svg.append("g");
 
-    // Links
-    const links = g
-      .selectAll("path")
-      .data(root.links())
-      .enter()
-      .append("path")
-      .attr("fill", "none")
-      .attr("stroke", "#ccc")
-      .attr("d", linkHorizontal);
+    function update(source) {
+      const duration = 750;
 
-    // Nodes
-    const nodes = g
-      .selectAll("g.node")
-      .data(root.descendants())
-      .enter()
-      .append("g")
-      .attr("class", "node")
-      .attr("transform", (d) => `translate(${d.x},${d.y})`)
-      .call(
-        d3
-          .drag()
-          .on("start", dragStarted)
-          .on("drag", dragged)
-          .on("end", dragEnded)
-      );
+      // 重新计算布局
+      treeLayout(root);
 
-    nodes
-      .append("circle")
-      .attr("r", 5)
-      .attr("fill", "#fff")
-      .attr("stroke", "#000");
+      // 更新节点位置
+      const nodes = root.descendants();
+      nodes.forEach((d) => {
+        const tempX = d.x;
+        d.x = d.y + offsetX;
+        d.y = tempX + offsetY;
+      });
 
-    nodes
-      .append("text")
-      .attr("dy", 3)
-      .attr("x", (d) => (d.children ? -8 : 8))
-      .attr("text-anchor", (d) => (d.children ? "end" : "start"))
-      .text((d) => d.data.name);
+      // 更新节点
+      const node = g.selectAll("g.node").data(nodes, (d) => d.data.name);
 
-    function dragStarted(event, d) {
-      d3.select(this).raise().classed("active", true);
+      const nodeEnter = node
+        .enter()
+        .append("g")
+        .attr("class", "node")
+        .attr("transform", (d) => `translate(${source.x0},${source.y0})`)
+        .on("click", handleClick);
+
+      nodeEnter
+        .append("circle")
+        .attr("r", 5)
+        .attr("fill", "#fff")
+        .attr("stroke", "#000");
+
+      nodeEnter
+        .append("text")
+        .attr("dy", 3)
+        .attr("x", (d) => (d.children || d._children ? -8 : 8))
+        .attr("text-anchor", (d) =>
+          d.children || d._children ? "end" : "start"
+        )
+        .text((d) => d.data.name);
+
+      const nodeUpdate = nodeEnter.merge(node);
+
+      nodeUpdate
+        .transition()
+        .duration(duration)
+        .attr("transform", (d) => `translate(${d.x},${d.y})`);
+
+      const nodeExit = node
+        .exit()
+        .transition()
+        .duration(duration)
+        .attr("transform", (d) => `translate(${source.x},${source.y})`)
+        .remove();
+
+      // 更新连接线
+      const link = g
+        .selectAll("path")
+        .data(root.links(), (d) => d.target.data.name);
+
+      const linkEnter = link
+        .enter()
+        .append("path")
+        .attr("fill", "none")
+        .attr("stroke", "#ccc")
+        .attr("d", () => {
+          const o = { x: source.x0, y: source.y0 };
+          return linkHorizontal({ source: o, target: o });
+        });
+
+      const linkUpdate = linkEnter.merge(link);
+
+      linkUpdate.transition().duration(duration).attr("d", linkHorizontal);
+
+      link
+        .exit()
+        .transition()
+        .duration(duration)
+        .attr("d", () => {
+          const o = { x: source.x, y: source.y };
+          return linkHorizontal({ source: o, target: o });
+        })
+        .remove();
+
+      // 保存旧位置用于过渡动画
+      nodes.forEach((d) => {
+        d.x0 = d.x;
+        d.y0 = d.y;
+      });
     }
 
-    function dragged(event, d) {
-      d.x = event.x;
-      d.y = event.y;
-      d3.select(this).attr("transform", `translate(${d.x},${d.y})`);
-      updateLinks();
-    }
-
-    function dragEnded(event, d) {
-      d3.select(this).classed("active", false);
-    }
-
-    function updateLinks() {
-      links.attr("d", linkHorizontal);
+    function handleClick(event, d) {
+      if (d._children) {
+        d.children = d._children;
+        d._children = null;
+        setExpandedNodes(new Set([...expandedNodes, d.data.name]));
+      } else if (d.children) {
+        d._children = d.children;
+        d.children = null;
+        const newExpandedNodes = new Set(expandedNodes);
+        newExpandedNodes.delete(d.data.name);
+        setExpandedNodes(newExpandedNodes);
+      }
+      update(d);
     }
 
     function linkHorizontal(d) {
@@ -99,11 +157,18 @@ const D3Visualization = ({ jsonData }) => {
         target: [d.target.x || 0, d.target.y || 0],
       });
     }
-  }, [jsonData]);
 
-  // transformData函数保持不变
+    update(root);
+  }, [jsonData, expandedNodes]);
+
+  // 修改 transformData 函数以支持数组
   function transformData(data, key = "root") {
-    if (typeof data !== "object" || data === null) {
+    if (Array.isArray(data)) {
+      return {
+        name: key,
+        children: data.map((item, index) => transformData(item, `[${index}]`)),
+      };
+    } else if (typeof data !== "object" || data === null) {
       return { name: `${key}: ${data}` };
     }
 
