@@ -14,16 +14,30 @@ const D3Visualization = ({ jsonData }) => {
       return;
     }
 
-    const width = svgRef.current.clientWidth;
-    const height = svgRef.current.clientHeight;
+    const width = 2000; // 设置一个较大的初始宽度
+    const height = 2000; // 设置一个较大的初始高度
+
+    svg.attr("width", width).attr("height", height);
+
+    const g = svg.append("g");
+
+    // 添加缩放行为
+    const zoom = d3
+      .zoom()
+      .scaleExtent([0.1, 4])
+      .on("zoom", (event) => {
+        g.attr("transform", event.transform);
+      });
+
+    svg.call(zoom);
 
     // 将输入的JSON对象转换为适合d3.hierarchy的格式
     const hierarchyData = transformData(jsonData);
 
     const root = d3.hierarchy(hierarchyData);
-    const treeLayout = d3.tree().size([height, width - 200]);
+    const treeLayout = d3.tree().size([height - 100, width - 200]);
 
-    // 折叠第3层以上的节点
+    // 折叠节点的逻辑保持不变
     root.descendants().forEach((d) => {
       if (d.depth >= 2 && !expandedNodes.has(d.data.name)) {
         if (d.children) {
@@ -44,8 +58,6 @@ const D3Visualization = ({ jsonData }) => {
       d.x = d.y + offsetX;
       d.y = tempX + offsetY;
     });
-
-    const g = svg.append("g");
 
     function update(source) {
       const duration = 750;
@@ -161,7 +173,6 @@ const D3Visualization = ({ jsonData }) => {
     update(root);
   }, [jsonData, expandedNodes]);
 
-  // 修改 transformData 函数以支持数组
   function transformData(data, key = "root") {
     if (Array.isArray(data)) {
       return {
@@ -185,7 +196,11 @@ const D3Visualization = ({ jsonData }) => {
     return result;
   }
 
-  return <svg ref={svgRef} className="w-full h-full"></svg>;
+  return (
+    <div style={{ width: "100%", height: "600px", overflow: "auto" }}>
+      <svg ref={svgRef} style={{ minWidth: "100%", minHeight: "100%" }}></svg>
+    </div>
+  );
 };
 
 export default D3Visualization;
