@@ -20,60 +20,45 @@ const D3Visualization = ({ jsonData }) => {
     const hierarchyData = transformData(jsonData);
 
     const root = d3.hierarchy(hierarchyData);
-    const treeLayout = d3.tree().size([width, height - 100]);
+    const treeLayout = d3.tree().size([height, width - 200]);
     treeLayout(root);
 
-    // 将根节点移动到 SVG 中央
+    // 将根节点移动到 SVG 左侧
     const rootNode = root.descendants()[0];
-    const offsetX = width / 2 - rootNode.x;
-    const offsetY = 50; // 给顶部留出一些空间
+    const offsetX = 100;
+    const offsetY = height / 2 - rootNode.x;
     root.descendants().forEach((d) => {
-      d.x += offsetX;
-      d.y += offsetY;
+      const tempX = d.x;
+      d.x = d.y + offsetX;
+      d.y = tempX + offsetY;
     });
 
+    const g = svg.append("g");
+
     // Links
-    svg
-      .selectAll("line")
+    const links = g
+      .selectAll("path")
       .data(root.links())
       .enter()
-      .append("line")
-      .attr("x1", (d) => d.source.x)
-      .attr("y1", (d) => d.source.y)
-      .attr("x2", (d) => d.target.x)
-      .attr("y2", (d) => d.target.y)
-      .attr("stroke", "#ccc");
+      .append("path")
+      .attr("fill", "none")
+      .attr("stroke", "#ccc")
+      .attr("d", linkHorizontal);
 
     // Nodes
-    const nodes = svg
-      .selectAll("g")
+    const nodes = g
+      .selectAll("g.node")
       .data(root.descendants())
       .enter()
       .append("g")
+      .attr("class", "node")
       .attr("transform", (d) => `translate(${d.x},${d.y})`)
       .call(
         d3
           .drag()
-          .on("start", (event, d) => {
-            d3.select(event.sourceEvent.target).raise().attr("stroke", "black");
-          })
-          .on("drag", (event, d) => {
-            d.x = event.x;
-            d.y = event.y;
-            d3.select(event.sourceEvent.target.parentNode).attr(
-              "transform",
-              `translate(${d.x},${d.y})`
-            );
-            svg
-              .selectAll("line")
-              .attr("x1", (d) => d.source.x)
-              .attr("y1", (d) => d.source.y)
-              .attr("x2", (d) => d.target.x)
-              .attr("y2", (d) => d.target.y);
-          })
-          .on("end", (event, d) => {
-            d3.select(event.sourceEvent.target).attr("stroke", null);
-          })
+          .on("start", dragStarted)
+          .on("drag", dragged)
+          .on("end", dragEnded)
       );
 
     nodes
@@ -84,12 +69,39 @@ const D3Visualization = ({ jsonData }) => {
 
     nodes
       .append("text")
-      .attr("dy", 20) // 增加文本与节点的距离
-      .attr("text-anchor", "middle")
+      .attr("dy", 3)
+      .attr("x", (d) => (d.children ? -8 : 8))
+      .attr("text-anchor", (d) => (d.children ? "end" : "start"))
       .text((d) => d.data.name);
+
+    function dragStarted(event, d) {
+      d3.select(this).raise().classed("active", true);
+    }
+
+    function dragged(event, d) {
+      d.x = event.x;
+      d.y = event.y;
+      d3.select(this).attr("transform", `translate(${d.x},${d.y})`);
+      updateLinks();
+    }
+
+    function dragEnded(event, d) {
+      d3.select(this).classed("active", false);
+    }
+
+    function updateLinks() {
+      links.attr("d", linkHorizontal);
+    }
+
+    function linkHorizontal(d) {
+      return d3.linkHorizontal()({
+        source: [d.source.x || 0, d.source.y || 0],
+        target: [d.target.x || 0, d.target.y || 0],
+      });
+    }
   }, [jsonData]);
 
-  // 修改后的transformData函数
+  // transformData函数保持不变
   function transformData(data, key = "root") {
     if (typeof data !== "object" || data === null) {
       return { name: `${key}: ${data}` };

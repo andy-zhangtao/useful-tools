@@ -22,7 +22,7 @@ function App() {
         <div className="col-4 bg-light border-right overflow-auto">
           <JsonInput onJsonChange={handleJsonChange} />
         </div>
-        <div className="col-6 bg-white overflow-auto">
+        <div className="col-8 bg-white overflow-auto">
           <D3Visualization jsonData={jsonData} />
         </div>
       </div>
