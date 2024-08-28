@@ -15,8 +15,8 @@ function App() {
   return (
     <div className="App container-fluid h-100">
       <div class="row">
-        <div class="col-md-6">左侧内容</div>
-        <div class="col-md-6">右侧内容</div>
+        <div class="col-md-6"></div>
+        <div class="col-md-6"></div>
       </div>
       <div className="row h-100">
         <div className="col-4 bg-light border-right overflow-auto">

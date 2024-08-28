@@ -1,0 +1,42 @@
+.json-input-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+  }
+  
+  .json-input, .json-output {
+    width: 100%;
+    height: 50%;
+    padding: 10px;
+    font-size: 14px;
+    line-height: 1.5;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    resize: none;
+    background-color: #ffffff;
+    color: #333;
+    overflow: auto;
+  }
+  
+  .json-input:focus {
+    outline: none;
+    border-color: #007AFF;
+    box-shadow: 0 0 0 2px rgba(0,122,255,0.2);
+  }
+  
+  .json-input::placeholder {
+    color: #999;
+  }
+  
+  .json-output {
+    background-color: #f8f8f8;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  
+  .json-error {
+    color: #d32f2f;
+    font-size: 12px;
+    margin-top: 5px;
+  }
