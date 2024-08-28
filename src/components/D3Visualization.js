@@ -39,7 +39,7 @@ const D3Visualization = ({ jsonData }) => {
 
     // 折叠节点的逻辑保持不变
     root.descendants().forEach((d) => {
-      if (d.depth >= 2 && !expandedNodes.has(d.data.name)) {
+      if (d.depth >= 6 && !expandedNodes.has(d.data.name)) {
         if (d.children) {
           d._children = d.children;
           d.children = null;
